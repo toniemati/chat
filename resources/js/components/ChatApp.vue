@@ -1,6 +1,10 @@
 <template>
     <div class="chat-app">
-        <Conversation :contact="selectedContact" :messages="messages" />
+        <Conversation
+            :contact="selectedContact"
+            :messages="messages"
+            @new="saveNewMessage"
+        />
         <ContactList :contacts="contacts" @selected="startConversationWith" />
     </div>
 </template>
@@ -27,6 +31,10 @@
         },
 
         mounted: function() {
+            Echo.private(`messages.${this.user.id}`).listen("NewMessage", e => {
+                this.handleIncoming(e.message);
+            });
+
             axios.get("/contacts").then(response => {
                 this.contacts = response.data;
             });
@@ -34,9 +42,39 @@
 
         methods: {
             startConversationWith: function(contact) {
+                this.updateUnreadCount(contact, true);
+
                 axios.get(`/conversation/${contact.id}`).then(response => {
                     this.messages = response.data;
                     this.selectedContact = contact;
+                });
+            },
+
+            saveNewMessage: function(message) {
+                this.messages.push(message);
+            },
+
+            handleIncoming: function(message) {
+                if (
+                    this.selectedContact &&
+                    message.from == this.selectedContact.id
+                ) {
+                    this.saveNewMessage(message);
+                    return;
+                }
+                this.updateUnreadCount(message.from_contact, false);
+            },
+
+            updateUnreadCount: function(contact, reset) {
+                this.contact = this.contacts.map(single => {
+                    if (single.id !== contact.id) {
+                        return single;
+                    }
+
+                    if (reset) single.unread = 0;
+                    else single.unread += 1;
+
+                    return single;
                 });
             }
         },

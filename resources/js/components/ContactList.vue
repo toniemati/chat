@@ -2,10 +2,10 @@
     <div class="contacts-list">
         <ul>
             <li
-                v-for="(contact, index) in contacts"
+                v-for="contact in sortedContacts"
                 :key="contact.id"
-                @click="selectContact(index, contact)"
-                :class="{ selected: index == selected }"
+                @click="selectContact(contact)"
+                :class="{ selected: contact == selected }"
             >
                 <div class="avatar">
                     <img :src="contact.profile_img" :alt="contact.name" />
@@ -14,6 +14,9 @@
                     <p class="name">{{ contact.name }}</p>
                     <p class="email">{{ contact.email }}</p>
                 </div>
+                <span class="unread" v-if="contact.unread">
+                    {{ contact.unread }}
+                </span>
             </li>
         </ul>
     </div>
@@ -32,14 +35,28 @@
 
         data: function() {
             return {
-                selected: 0
+                selected: this.contacts.length ? this.contacts[0] : null
             };
         },
 
         methods: {
-            selectContact: function(index, contact) {
-                this.selected = index;
+            selectContact: function(contact) {
+                this.selected = contact;
                 this.$emit("selected", contact);
+            }
+        },
+
+        computed: {
+            sortedContacts: function() {
+                return _.sortBy(this.contacts, [
+                    contact => {
+                        if (contact == this.selected) {
+                            return Infinity;
+                        }
+
+                        return contact.unread;
+                    }
+                ]).reverse();
             }
         }
     };
@@ -66,6 +83,21 @@
 
             &.selected {
                 background: #dfdfdf;
+            }
+
+            span.unread {
+                background: #7ee17e;
+                position: absolute;
+                top: 20px;
+                right: 10px;
+                min-width: 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-size: 12px;
+                padding: 0 4px;
+                border-radius: 3px;
+                color: #fff;
             }
 
             .avatar {

@@ -2,7 +2,7 @@
     <div class="composer">
         <textarea
             v-model="message"
-            @key.down.enter="send"
+            @keydown.enter="send"
             placeholder="Message..."
         ></textarea>
     </div>
@@ -19,7 +19,9 @@
         },
 
         methods: {
-            send: function() {
+            send: function(e) {
+                e.preventDefault();
+
                 if (this.message === "") {
                     return;
                 }
